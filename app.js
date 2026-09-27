@@ -93,11 +93,72 @@ function renderManagement() {
   const borrowedBooks = books.filter(isBorrowed);
   $("#borrowedList").innerHTML = borrowedBooks.length ? borrowedBooks.map((book) => `<div class="loan-row"><div><strong>${escapeHtml(book.title)}</strong><small>${escapeHtml(book.id)} · ${escapeHtml(book.author)}</small></div><button class="return-button" data-return-id="${escapeHtml(book.id)}" type="button">반납 처리</button></div>`).join("") : `<div class="all-available">현재 대여 중인 책이 없어요.</div>`;
   document.querySelectorAll("[data-return-id]").forEach((button) => button.addEventListener("click", () => returnBook(button.dataset.returnId)));
+  $("#bookAdminList").innerHTML = books.map((book) => `<div class="loan-row"><div><strong>${escapeHtml(book.title)}</strong><small>${escapeHtml(book.id)} · ${escapeHtml(book.author)}</small></div><button class="delete-button" data-delete-id="${escapeHtml(book.id)}" type="button">삭제</button></div>`).join("");
+  document.querySelectorAll("[data-delete-id]").forEach((button) => button.addEventListener("click", () => deleteBook(button.dataset.deleteId)));
 }
 
 async function returnBook(id) {
   try { await updateBookStatus(id, "available"); showToast("반납 처리가 완료되었어요."); }
   catch (error) { showToast("반납 처리에 실패했습니다."); console.error(error); }
+}
+
+function nextBookId() {
+  const max = books.reduce((value, book) => Math.max(value, Number(String(book.id).replace(/\D/g, "")) || 0), 0);
+  return `B${String(max + 1).padStart(3, "0")}`;
+}
+
+async function addBook(event) {
+  event.preventDefault();
+  const file = $("#bookCover").files[0];
+  const title = $("#bookTitle").value.trim();
+  const author = $("#bookAuthor").value.trim();
+  const errorElement = $("#addBookError");
+  const button = $("#addBookButton");
+  errorElement.textContent = "";
+  if (!file || !title || !author) { errorElement.textContent = "사진, 책 이름, 작가를 모두 입력해 주세요."; return; }
+  if (file.size > 5 * 1024 * 1024) { errorElement.textContent = "사진은 5MB 이하만 등록할 수 있습니다."; return; }
+
+  button.disabled = true;
+  button.textContent = "추가 중…";
+  const id = nextBookId();
+  const extension = (file.name.split(".").pop() || "jpg").toLowerCase();
+  const objectPath = `${id}-${crypto.randomUUID()}.${extension}`;
+
+  try {
+    const { error: uploadError } = await db.storage.from("book-covers").upload(objectPath, file, { cacheControl:"3600", upsert:false });
+    if (uploadError) throw uploadError;
+    const { data: publicData } = db.storage.from("book-covers").getPublicUrl(objectPath);
+    const { error: insertError } = await db.from("books").insert({ id, title, author, cover_url:publicData.publicUrl, grade:"전 학년", description:"" });
+    if (insertError) {
+      await db.storage.from("book-covers").remove([objectPath]);
+      throw insertError;
+    }
+    $("#addBookForm").reset();
+    showToast(`‘${title}’ 책을 추가했습니다.`);
+  } catch (error) {
+    errorElement.textContent = "책을 추가하지 못했습니다. 잠시 후 다시 시도해 주세요.";
+    console.error(error);
+  } finally {
+    button.disabled = false;
+    button.textContent = "책 추가하기";
+  }
+}
+
+function coverObjectPath(url) {
+  const marker = "/storage/v1/object/public/book-covers/";
+  return url?.includes(marker) ? decodeURIComponent(url.split(marker)[1]) : null;
+}
+
+async function deleteBook(id) {
+  const book = books.find((item) => item.id === id);
+  if (!book || !confirm(`‘${book.title}’을(를) 목록에서 삭제할까요?`)) return;
+  try {
+    const { error } = await db.from("books").delete().eq("id", id);
+    if (error) throw error;
+    const objectPath = coverObjectPath(book.cover_url);
+    if (objectPath) await db.storage.from("book-covers").remove([objectPath]);
+    showToast(`‘${book.title}’ 책을 삭제했습니다.`);
+  } catch (error) { showToast("책을 삭제하지 못했습니다."); console.error(error); }
 }
 
 async function login(event) {
@@ -128,13 +189,22 @@ $("#searchInput").addEventListener("input", (event) => { query = event.target.va
 document.querySelectorAll(".filter").forEach((button) => button.addEventListener("click", () => { document.querySelectorAll(".filter").forEach((item) => item.classList.remove("active")); button.classList.add("active"); filter = button.dataset.filter; renderBooks(); }));
 $("#manageButton").addEventListener("click", () => { if (!session) { $("#loginDialog").showModal(); return; } renderManagement(); $("#manageDialog").showModal(); });
 $("#loginForm").addEventListener("submit", login);
+$("#addBookForm").addEventListener("submit", addBook);
 $("#logoutButton").addEventListener("click", logout);
 $("#resetAllButton").addEventListener("click", async () => { if (!confirm("모든 책을 ‘대여 가능’으로 바꿀까요?")) return; const { error } = await db.from("books").update({ status:"available", borrowed_at:null, updated_at:new Date().toISOString() }).eq("status", "borrowed"); showToast(error ? "초기화에 실패했습니다." : "모든 대여 상태를 초기화했어요."); });
 document.querySelectorAll("[data-close]").forEach((button) => button.addEventListener("click", () => document.getElementById(button.dataset.close).close()));
 ["bookDialog","manageDialog","loginDialog"].forEach((id) => document.getElementById(id).addEventListener("click", (event) => { if (event.target === event.currentTarget) event.currentTarget.close(); }));
 
+$("#fullscreenButton").addEventListener("click", async () => {
+  try {
+    if (!document.fullscreenElement) await document.documentElement.requestFullscreen();
+    else await document.exitFullscreen();
+  } catch { showToast("이 브라우저에서는 전체화면을 사용할 수 없습니다."); }
+});
+document.addEventListener("fullscreenchange", () => { $("#fullscreenButton").textContent = document.fullscreenElement ? "전체화면 종료" : "전체화면"; });
+
 db.auth.onAuthStateChange((_event, nextSession) => { session = nextSession; updateAuthUi(); renderBooks(); });
-db.channel("books-status").on("postgres_changes", { event:"*", schema:"public", table:"books" }, () => { loadBooks(); if ($("#manageDialog").open) renderManagement(); }).subscribe((status) => { if (status === "SUBSCRIBED") setSyncStatus("실시간 연결", "online"); });
+db.channel("books-status").on("postgres_changes", { event:"*", schema:"public", table:"books" }, async () => { await loadBooks(); if ($("#manageDialog").open) renderManagement(); }).subscribe((status) => { if (status === "SUBSCRIBED") setSyncStatus("실시간 연결", "online"); });
 if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js"));
 
 loadBooks();

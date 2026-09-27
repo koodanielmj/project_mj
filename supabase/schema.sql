@@ -32,6 +32,19 @@ with check (true);
 grant select on table public.books to anon, authenticated;
 grant update (status, borrowed_at, updated_at) on table public.books to authenticated;
 
+-- 관리자 모드에서 새 책을 등록하거나 삭제할 수 있습니다.
+create policy "authenticated operators can insert books"
+on public.books for insert
+to authenticated
+with check (true);
+
+create policy "authenticated operators can delete books"
+on public.books for delete
+to authenticated
+using (true);
+
+grant insert, delete on table public.books to authenticated;
+
 insert into public.books
   (id, title, author, grade, description, emoji, color)
 values
@@ -63,3 +76,23 @@ begin
     alter publication supabase_realtime add table public.books;
   end if;
 end $$;
+
+-- 공개 표지 이미지 버킷. 쓰기와 삭제는 로그인한 운영자만 가능합니다.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('book-covers', 'book-covers', true, 5242880, array['image/jpeg', 'image/png', 'image/webp'])
+on conflict (id) do nothing;
+
+create policy "book covers are publicly readable"
+on storage.objects for select
+to anon, authenticated
+using (bucket_id = 'book-covers');
+
+create policy "authenticated operators can upload book covers"
+on storage.objects for insert
+to authenticated
+with check (bucket_id = 'book-covers');
+
+create policy "authenticated operators can delete book covers"
+on storage.objects for delete
+to authenticated
+using (bucket_id = 'book-covers');

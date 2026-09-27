@@ -17,6 +17,7 @@
       </a>
       <div class="header-actions">
         <span class="sync-status" id="syncStatus" aria-live="polite">연결 중…</span>
+        <button class="fullscreen-button" id="fullscreenButton" type="button" aria-label="전체화면으로 전환">전체화면</button>
         <button class="manage-button" id="manageButton" type="button" aria-label="운영자 로그인 또는 대여 관리 열기">운영자 로그인</button>
       </div>
     </header>
@@ -51,10 +52,27 @@
 
     <dialog id="bookDialog" class="book-dialog"><div id="bookDialogContent"></div></dialog>
     <dialog id="manageDialog" class="manage-dialog">
-      <div class="dialog-head"><div><p class="eyebrow">LIBRARY DESK</p><h2>대여 관리</h2></div><button class="icon-button" data-close="manageDialog" aria-label="닫기">×</button></div>
-      <p class="dialog-description">반납된 책의 상태를 다시 ‘대여 가능’으로 바꿀 수 있어요.</p>
+      <div class="dialog-head"><div><p class="eyebrow">LIBRARY DESK</p><h2>관리자 모드</h2></div><button class="icon-button" data-close="manageDialog" aria-label="닫기">×</button></div>
+      <section class="admin-section" aria-labelledby="addBookTitle">
+        <h3 id="addBookTitle">새 책 추가</h3>
+        <form id="addBookForm" class="add-book-form">
+          <label class="field">책 사진<input id="bookCover" type="file" accept="image/jpeg,image/png,image/webp" required /></label>
+          <label class="field">책 이름<input id="bookTitle" type="text" maxlength="100" required /></label>
+          <label class="field">작가<input id="bookAuthor" type="text" maxlength="100" required /></label>
+          <p class="form-error" id="addBookError" role="alert"></p>
+          <button class="primary-button" id="addBookButton" type="submit">책 추가하기</button>
+        </form>
+      </section>
+      <section class="admin-section" aria-labelledby="loanTitle">
+        <h3 id="loanTitle">대여 중인 책</h3>
+        <p class="dialog-description">반납된 책의 상태를 다시 ‘대여 가능’으로 바꿀 수 있어요.</p>
+      </section>
       <div id="borrowedList" class="borrowed-list"></div>
       <button class="secondary-button" id="resetAllButton" type="button">모든 대여 상태 초기화</button>
+      <section class="admin-section" aria-labelledby="bookAdminTitle">
+        <h3 id="bookAdminTitle">등록된 책 관리</h3>
+        <div id="bookAdminList" class="borrowed-list"></div>
+      </section>
       <button class="text-button" id="logoutButton" type="button">운영자 로그아웃</button>
     </dialog>
 
