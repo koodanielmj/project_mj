@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#08765f" />
+    <meta name="description" content="서울서빙고초등학교 어린이 작가들의 책을 만나는 빙고서점 키오스크" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="stylesheet" href="./styles.css" />
+    <title>빙고서점</title>
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="#top" aria-label="빙고서점 홈">
+        <img src="./assets/school-logo.png" alt="서울서빙고초등학교" />
+        <span><strong>빙고서점</strong><small>우리 학교 어린이 작가들의 책</small></span>
+      </a>
+      <button class="manage-button" id="manageButton" type="button" aria-label="대여 관리 열기">대여 관리</button>
+    </header>
+
+    <main id="top">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">SEOUL SEOBINGGO ELEMENTARY SCHOOL</p>
+          <h1>읽고 싶은 책을<br /><em>직접 골라 보세요!</em></h1>
+          <p>친구들이 만든 특별한 책을 구경하고, 마음에 드는 책을 빌려 보세요.</p>
+        </div>
+        <div class="hero-art" aria-hidden="true">📚<span>✨</span></div>
+      </section>
+
+      <section class="catalog" aria-labelledby="catalogTitle">
+        <div class="section-heading">
+          <div><p class="eyebrow">BOOK COLLECTION</p><h2 id="catalogTitle">어린이 작가의 책</h2></div>
+          <p id="bookCount" aria-live="polite"></p>
+        </div>
+        <div class="controls">
+          <label class="search"><span aria-hidden="true">⌕</span><input id="searchInput" type="search" placeholder="책 제목이나 작가를 찾아보세요" /></label>
+          <div class="filters" role="group" aria-label="대여 상태 필터">
+            <button class="filter active" data-filter="all" type="button">전체</button>
+            <button class="filter" data-filter="available" type="button">대여 가능</button>
+            <button class="filter" data-filter="borrowed" type="button">대여 중</button>
+          </div>
+        </div>
+        <div class="book-grid" id="bookGrid"></div>
+        <div class="empty-state" id="emptyState" hidden><span>🔍</span><h3>찾는 책이 없어요</h3><p>다른 검색어를 입력해 보세요.</p></div>
+      </section>
+    </main>
+
+    <dialog id="bookDialog" class="book-dialog"><div id="bookDialogContent"></div></dialog>
+    <dialog id="manageDialog" class="manage-dialog">
+      <div class="dialog-head"><div><p class="eyebrow">LIBRARY DESK</p><h2>대여 관리</h2></div><button class="icon-button" data-close="manageDialog" aria-label="닫기">×</button></div>
+      <p class="dialog-description">반납된 책의 상태를 다시 ‘대여 가능’으로 바꿀 수 있어요.</p>
+      <div id="borrowedList" class="borrowed-list"></div>
+      <button class="secondary-button" id="resetAllButton" type="button">모든 대여 상태 초기화</button>
+    </dialog>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="./app.js" defer></script>
+  </body>
+</html>
