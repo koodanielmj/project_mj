@@ -1,5 +1,6 @@
 const SUPABASE_URL = "https://jhmvkanvykbjolbelpit.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_uMmfpqPIzOC-QkLEksO2qg_9Ot-dj4_";
+const OPERATOR_EMAIL = "operator@bingo.local";
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 
 let books = [];
@@ -166,9 +167,9 @@ async function login(event) {
   const button = $("#loginButton");
   button.disabled = true;
   $("#loginError").textContent = "";
-  const { error } = await db.auth.signInWithPassword({ email: $("#loginEmail").value.trim(), password: $("#loginPassword").value });
+  const { error } = await db.auth.signInWithPassword({ email: OPERATOR_EMAIL, password: $("#loginPassword").value });
   button.disabled = false;
-  if (error) { $("#loginError").textContent = "이메일 또는 비밀번호를 확인해 주세요."; return; }
+  if (error) { $("#loginError").textContent = "관리자 비밀번호를 확인해 주세요."; return; }
   $("#loginPassword").value = "";
   $("#loginDialog").close();
   showToast("운영자로 로그인했습니다.");
