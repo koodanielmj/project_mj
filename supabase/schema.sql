@@ -31,6 +31,7 @@ with check (true);
 
 grant select on table public.books to anon, authenticated;
 grant update (status, borrowed_at, updated_at) on table public.books to authenticated;
+grant update (title, author, cover_url, updated_at) on table public.books to authenticated;
 
 -- 관리자 모드에서 새 책을 등록하거나 삭제할 수 있습니다.
 create policy "authenticated operators can insert books"

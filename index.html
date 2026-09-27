@@ -74,6 +74,18 @@
       <button class="text-button" id="logoutButton" type="button">운영자 로그아웃</button>
     </dialog>
 
+    <dialog id="editBookDialog" class="edit-book-dialog">
+      <form id="editBookForm">
+        <div class="dialog-head"><div><p class="eyebrow">BOOK EDITOR</p><h2>책 정보 수정</h2></div><button class="icon-button" type="button" data-close="editBookDialog" aria-label="닫기">×</button></div>
+        <input id="editBookId" type="hidden" />
+        <label class="field">새 책 사진 <small>사진을 바꾸지 않으려면 선택하지 마세요.</small><input id="editBookCover" type="file" accept="image/jpeg,image/png,image/webp" /></label>
+        <label class="field">책 이름<input id="editBookTitle" type="text" maxlength="100" required /></label>
+        <label class="field">작가<input id="editBookAuthor" type="text" maxlength="100" required /></label>
+        <p class="form-error" id="editBookError" role="alert"></p>
+        <button class="primary-button" id="editBookButton" type="submit">수정 내용 저장</button>
+      </form>
+    </dialog>
+
     <dialog id="loginDialog" class="login-dialog">
       <form id="loginForm">
         <div class="dialog-head"><div><p class="eyebrow">OPERATOR</p><h2>운영자 로그인</h2></div><button class="icon-button" type="button" data-close="loginDialog" aria-label="닫기">×</button></div>

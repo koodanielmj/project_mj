@@ -94,7 +94,8 @@ function renderManagement() {
   const borrowedBooks = books.filter(isBorrowed);
   $("#borrowedList").innerHTML = borrowedBooks.length ? borrowedBooks.map((book) => `<div class="loan-row"><div><strong>${escapeHtml(book.title)}</strong><small>${escapeHtml(book.id)} · ${escapeHtml(book.author)}</small></div><button class="return-button" data-return-id="${escapeHtml(book.id)}" type="button">반납 처리</button></div>`).join("") : `<div class="all-available">현재 대여 중인 책이 없어요.</div>`;
   document.querySelectorAll("[data-return-id]").forEach((button) => button.addEventListener("click", () => returnBook(button.dataset.returnId)));
-  $("#bookAdminList").innerHTML = books.map((book) => `<div class="loan-row"><div><strong>${escapeHtml(book.title)}</strong><small>${escapeHtml(book.id)} · ${escapeHtml(book.author)}</small></div><button class="delete-button" data-delete-id="${escapeHtml(book.id)}" type="button">삭제</button></div>`).join("");
+  $("#bookAdminList").innerHTML = books.map((book) => `<div class="loan-row"><div><strong>${escapeHtml(book.title)}</strong><small>${escapeHtml(book.id)} · ${escapeHtml(book.author)}</small></div><div class="admin-actions"><button class="edit-button" data-edit-id="${escapeHtml(book.id)}" type="button">수정</button><button class="delete-button" data-delete-id="${escapeHtml(book.id)}" type="button">삭제</button></div></div>`).join("");
+  document.querySelectorAll("[data-edit-id]").forEach((button) => button.addEventListener("click", () => openEditBook(button.dataset.editId)));
   document.querySelectorAll("[data-delete-id]").forEach((button) => button.addEventListener("click", () => deleteBook(button.dataset.deleteId)));
 }
 
@@ -150,6 +151,64 @@ function coverObjectPath(url) {
   return url?.includes(marker) ? decodeURIComponent(url.split(marker)[1]) : null;
 }
 
+function openEditBook(id) {
+  const book = books.find((item) => item.id === id);
+  if (!book) return;
+  $("#editBookForm").reset();
+  $("#editBookId").value = book.id;
+  $("#editBookTitle").value = book.title;
+  $("#editBookAuthor").value = book.author;
+  $("#editBookError").textContent = "";
+  $("#editBookDialog").showModal();
+}
+
+async function editBook(event) {
+  event.preventDefault();
+  const id = $("#editBookId").value;
+  const book = books.find((item) => item.id === id);
+  const file = $("#editBookCover").files[0];
+  const title = $("#editBookTitle").value.trim();
+  const author = $("#editBookAuthor").value.trim();
+  const errorElement = $("#editBookError");
+  const button = $("#editBookButton");
+  errorElement.textContent = "";
+  if (!book || !title || !author) { errorElement.textContent = "책 이름과 작가를 모두 입력해 주세요."; return; }
+  if (file && file.size > 5 * 1024 * 1024) { errorElement.textContent = "사진은 5MB 이하만 등록할 수 있습니다."; return; }
+
+  button.disabled = true;
+  button.textContent = "저장 중…";
+  let newObjectPath = null;
+  let coverUrl = book.cover_url;
+
+  try {
+    if (file) {
+      const extension = (file.name.split(".").pop() || "jpg").toLowerCase();
+      newObjectPath = `${id}-${crypto.randomUUID()}.${extension}`;
+      const { error: uploadError } = await db.storage.from("book-covers").upload(newObjectPath, file, { cacheControl:"3600", upsert:false });
+      if (uploadError) throw uploadError;
+      const { data: publicData } = db.storage.from("book-covers").getPublicUrl(newObjectPath);
+      coverUrl = publicData.publicUrl;
+    }
+
+    const { error: updateError } = await db.from("books").update({ title, author, cover_url:coverUrl, updated_at:new Date().toISOString() }).eq("id", id);
+    if (updateError) throw updateError;
+
+    if (newObjectPath) {
+      const oldObjectPath = coverObjectPath(book.cover_url);
+      if (oldObjectPath) await db.storage.from("book-covers").remove([oldObjectPath]);
+    }
+    $("#editBookDialog").close();
+    showToast(`‘${title}’ 책 정보를 수정했습니다.`);
+  } catch (error) {
+    if (newObjectPath) await db.storage.from("book-covers").remove([newObjectPath]);
+    errorElement.textContent = "책 정보를 수정하지 못했습니다. 잠시 후 다시 시도해 주세요.";
+    console.error(error);
+  } finally {
+    button.disabled = false;
+    button.textContent = "수정 내용 저장";
+  }
+}
+
 async function deleteBook(id) {
   const book = books.find((item) => item.id === id);
   if (!book || !confirm(`‘${book.title}’을(를) 목록에서 삭제할까요?`)) return;
@@ -191,10 +250,11 @@ document.querySelectorAll(".filter").forEach((button) => button.addEventListener
 $("#manageButton").addEventListener("click", () => { if (!session) { $("#loginDialog").showModal(); return; } renderManagement(); $("#manageDialog").showModal(); });
 $("#loginForm").addEventListener("submit", login);
 $("#addBookForm").addEventListener("submit", addBook);
+$("#editBookForm").addEventListener("submit", editBook);
 $("#logoutButton").addEventListener("click", logout);
 $("#resetAllButton").addEventListener("click", async () => { if (!confirm("모든 책을 ‘대여 가능’으로 바꿀까요?")) return; const { error } = await db.from("books").update({ status:"available", borrowed_at:null, updated_at:new Date().toISOString() }).eq("status", "borrowed"); showToast(error ? "초기화에 실패했습니다." : "모든 대여 상태를 초기화했어요."); });
 document.querySelectorAll("[data-close]").forEach((button) => button.addEventListener("click", () => document.getElementById(button.dataset.close).close()));
-["bookDialog","manageDialog","loginDialog"].forEach((id) => document.getElementById(id).addEventListener("click", (event) => { if (event.target === event.currentTarget) event.currentTarget.close(); }));
+["bookDialog","manageDialog","editBookDialog","loginDialog"].forEach((id) => document.getElementById(id).addEventListener("click", (event) => { if (event.target === event.currentTarget) event.currentTarget.close(); }));
 
 $("#fullscreenButton").addEventListener("click", async () => {
   try {
