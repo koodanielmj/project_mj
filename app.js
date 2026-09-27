@@ -23,14 +23,14 @@ function updateAuthUi() {
 
 async function loadBooks() {
   setSyncStatus("연결 중…");
-  const { data, error } = await db.from("books").select("*").order("id");
+  const { data, error } = await db.from("books").select("*");
   if (error) {
     setSyncStatus("연결 오류", "offline");
     $("#bookGrid").innerHTML = `<div class="connection-error"><strong>책 목록을 불러오지 못했습니다.</strong><br />잠시 후 화면을 새로고침해 주세요.</div>`;
     console.error(error);
     return;
   }
-  books = data;
+  books = data.sort((a, b) => bookSortNumber(a.id) - bookSortNumber(b.id) || a.id.localeCompare(b.id, "ko"));
   setSyncStatus("실시간 연결", "online");
   renderBooks();
 }
@@ -109,6 +109,16 @@ function nextBookId() {
   return `B${String(max + 1).padStart(3, "0")}`;
 }
 
+function bookSortNumber(id) {
+  const digits = String(id).match(/\d+/)?.[0];
+  return digits ? Number(digits) : Number.MAX_SAFE_INTEGER;
+}
+
+function normalizeBookId(value) {
+  const match = String(value).trim().toUpperCase().match(/^B?(\d+)$/);
+  return match ? `B${match[1].padStart(3, "0")}` : null;
+}
+
 async function addBook(event) {
   event.preventDefault();
   const file = $("#bookCover").files[0];
@@ -156,6 +166,7 @@ function openEditBook(id) {
   if (!book) return;
   $("#editBookForm").reset();
   $("#editBookId").value = book.id;
+  $("#editBookNumber").value = book.id;
   $("#editBookTitle").value = book.title;
   $("#editBookAuthor").value = book.author;
   $("#editBookError").textContent = "";
@@ -166,13 +177,16 @@ async function editBook(event) {
   event.preventDefault();
   const id = $("#editBookId").value;
   const book = books.find((item) => item.id === id);
+  const nextId = normalizeBookId($("#editBookNumber").value);
   const file = $("#editBookCover").files[0];
   const title = $("#editBookTitle").value.trim();
   const author = $("#editBookAuthor").value.trim();
   const errorElement = $("#editBookError");
   const button = $("#editBookButton");
   errorElement.textContent = "";
-  if (!book || !title || !author) { errorElement.textContent = "책 이름과 작가를 모두 입력해 주세요."; return; }
+  if (!book || !title || !author) { errorElement.textContent = "책 번호, 책 이름과 작가를 모두 입력해 주세요."; return; }
+  if (!nextId) { errorElement.textContent = "책 번호는 B004 또는 4처럼 숫자로 입력해 주세요."; return; }
+  if (books.some((item) => item.id === nextId && item.id !== id)) { errorElement.textContent = `이미 사용 중인 책 번호 ${nextId}입니다.`; return; }
   if (file && file.size > 5 * 1024 * 1024) { errorElement.textContent = "사진은 5MB 이하만 등록할 수 있습니다."; return; }
 
   button.disabled = true;
@@ -183,14 +197,14 @@ async function editBook(event) {
   try {
     if (file) {
       const extension = (file.name.split(".").pop() || "jpg").toLowerCase();
-      newObjectPath = `${id}-${crypto.randomUUID()}.${extension}`;
+      newObjectPath = `${nextId}-${crypto.randomUUID()}.${extension}`;
       const { error: uploadError } = await db.storage.from("book-covers").upload(newObjectPath, file, { cacheControl:"3600", upsert:false });
       if (uploadError) throw uploadError;
       const { data: publicData } = db.storage.from("book-covers").getPublicUrl(newObjectPath);
       coverUrl = publicData.publicUrl;
     }
 
-    const { error: updateError } = await db.from("books").update({ title, author, cover_url:coverUrl, updated_at:new Date().toISOString() }).eq("id", id);
+    const { error: updateError } = await db.from("books").update({ id:nextId, title, author, cover_url:coverUrl, updated_at:new Date().toISOString() }).eq("id", id);
     if (updateError) throw updateError;
 
     if (newObjectPath) {

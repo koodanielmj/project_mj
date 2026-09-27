@@ -78,6 +78,7 @@
       <form id="editBookForm">
         <div class="dialog-head"><div><p class="eyebrow">BOOK EDITOR</p><h2>책 정보 수정</h2></div><button class="icon-button" type="button" data-close="editBookDialog" aria-label="닫기">×</button></div>
         <input id="editBookId" type="hidden" />
+        <label class="field">책 번호 <small>번호가 작은 책부터 앞에 표시됩니다.</small><input id="editBookNumber" type="text" inputmode="numeric" maxlength="12" placeholder="예: B004" required /></label>
         <label class="field">새 책 사진 <small>사진을 바꾸지 않으려면 선택하지 마세요.</small><input id="editBookCover" type="file" accept="image/jpeg,image/png,image/webp" /></label>
         <label class="field">책 이름<input id="editBookTitle" type="text" maxlength="100" required /></label>
         <label class="field">작가<input id="editBookAuthor" type="text" maxlength="100" required /></label>
