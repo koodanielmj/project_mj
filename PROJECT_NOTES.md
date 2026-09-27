@@ -25,8 +25,11 @@
 - 전체 / 대여 가능 / 대여 중 필터
 - 도서 상세 정보 및 대여 확인
 - 대여 관리 화면에서 반납 및 전체 초기화
+- 관리자 모드에서 도서 추가·수정·삭제
+- 도서 번호 변경에 따른 숫자 기준 자동 정렬
 - PWA manifest와 service worker
 - 서울서빙고초등학교 로고 적용
+- 간소화된 빙고서점 배너와 우측 책 아이콘
 - 샘플 도서 6권
 
 주요 파일:
@@ -54,7 +57,7 @@
 - 샘플 도서 6권
 - Row Level Security(RLS)
 - 누구나 도서 목록과 현재 상태를 읽을 수 있는 정책
-- 로그인한 운영자만 `status`, `borrowed_at`, `updated_at`을 변경할 수 있는 정책
+- 로그인한 운영자만 대여 상태와 도서 번호·제목·작가·표지 정보를 변경할 수 있는 정책
 - `books` 테이블 Realtime 등록
 
 보안 원칙:
@@ -66,6 +69,7 @@
 ## 5. 현재 상태
 
 - GitHub Pages 배포: 완료
+- 외부 접속용 공개 주소 동작 확인: 완료
 - Supabase 프로젝트 생성: 완료
 - 데이터베이스 스키마 실행: 완료
 - RLS 정책 및 Realtime 등록: 완료
@@ -104,3 +108,5 @@
 
 - `ac8ce3d` — Build Bingo Bookstore tablet kiosk
 - `c7129ee` — Add Supabase books schema and access policies
+- `79972a5` — Add admin book editing
+- `5fa1833` — Allow editing and sorting book numbers
