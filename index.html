@@ -15,7 +15,10 @@
         <img src="./assets/school-logo.png" alt="서울서빙고초등학교" />
         <span><strong>빙고서점</strong><small>우리 학교 어린이 작가들의 책</small></span>
       </a>
-      <button class="manage-button" id="manageButton" type="button" aria-label="대여 관리 열기">대여 관리</button>
+      <div class="header-actions">
+        <span class="sync-status" id="syncStatus" aria-live="polite">연결 중…</span>
+        <button class="manage-button" id="manageButton" type="button" aria-label="운영자 로그인 또는 대여 관리 열기">운영자 로그인</button>
+      </div>
     </header>
 
     <main id="top">
@@ -52,9 +55,22 @@
       <p class="dialog-description">반납된 책의 상태를 다시 ‘대여 가능’으로 바꿀 수 있어요.</p>
       <div id="borrowedList" class="borrowed-list"></div>
       <button class="secondary-button" id="resetAllButton" type="button">모든 대여 상태 초기화</button>
+      <button class="text-button" id="logoutButton" type="button">운영자 로그아웃</button>
+    </dialog>
+
+    <dialog id="loginDialog" class="login-dialog">
+      <form id="loginForm">
+        <div class="dialog-head"><div><p class="eyebrow">OPERATOR</p><h2>운영자 로그인</h2></div><button class="icon-button" type="button" data-close="loginDialog" aria-label="닫기">×</button></div>
+        <p class="dialog-description">대여·반납 처리를 위해 Supabase 운영자 계정으로 로그인하세요.</p>
+        <label class="field">이메일<input id="loginEmail" type="email" autocomplete="username" required /></label>
+        <label class="field">비밀번호<input id="loginPassword" type="password" autocomplete="current-password" required /></label>
+        <p class="form-error" id="loginError" role="alert"></p>
+        <button class="primary-button" id="loginButton" type="submit">로그인</button>
+      </form>
     </dialog>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
     <script src="./app.js" defer></script>
   </body>
 </html>

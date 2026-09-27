@@ -5,13 +5,14 @@
 ## 운영 구조
 
 ```text
-GitHub 저장소 → GitHub Pages → 행사장 태블릿 한 대
-                                    └─ 대여 상태: 브라우저 localStorage
+GitHub 저장소 → GitHub Pages → 행사장 태블릿과 운영 기기
+                                    └─ Supabase: 도서·대여 상태·운영자 인증·Realtime
 ```
 
-- 별도 서버와 데이터베이스가 없습니다.
-- 대여 상태는 사용하는 태블릿의 현재 브라우저에만 저장됩니다.
-- 브라우저 데이터 삭제, 시크릿 모드, 다른 브라우저 사용 시 대여 상태가 유지되지 않습니다.
+- 별도의 직접 운영 서버 없이 GitHub Pages와 Supabase를 사용합니다.
+- 도서와 대여 상태는 Supabase에 저장되어 여러 기기에서 공유됩니다.
+- 일반 방문자는 목록을 읽을 수 있고, 로그인한 운영자만 대여·반납 상태를 바꿀 수 있습니다.
+- 변경 사항은 Supabase Realtime으로 연결된 화면에 반영됩니다.
 
 ## 주요 기능
 
@@ -50,6 +51,6 @@ GitHub 저장소 → GitHub Pages → 행사장 태블릿 한 대
 
 배포 주소: `https://koodanielmj.github.io/project_mj/`
 
-## 성장 시 재검토할 부분
+## Supabase 설정
 
-여러 기기에서 같은 대여 상태를 공유해야 하거나 대여 이력이 중요해지면 Firebase·Supabase 같은 공용 저장소를 추가해야 합니다.
+데이터베이스 스키마와 RLS 정책은 `supabase/schema.sql`에 있습니다. 브라우저에는 RLS로 제한되는 Publishable Key만 사용하며, 데이터베이스 비밀번호와 Secret/Service Role Key는 절대로 저장소에 올리지 않습니다.

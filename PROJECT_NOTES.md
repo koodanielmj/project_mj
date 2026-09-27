@@ -69,11 +69,11 @@
 - Supabase 프로젝트 생성: 완료
 - 데이터베이스 스키마 실행: 완료
 - RLS 정책 및 Realtime 등록: 완료
-- 프런트엔드의 Supabase 연결: 미완료
+- 프런트엔드의 Supabase 연결: 완료
 - 운영자 로그인 화면 및 계정 설정: 미완료
 - 여러 기기 간 대여 상태 동기화 검증: 미완료
 
-현재 배포된 `app.js`는 여전히 브라우저 `localStorage`에 대여 상태를 저장한다. 따라서 지금 사이트에서 바꾼 상태는 같은 브라우저에만 남으며, 아직 다른 기기와 공유되지 않는다.
+`app.js`는 Supabase에서 도서와 대여 상태를 읽고 쓰며 Realtime 변경을 구독한다. 일반 방문자는 읽기만 가능하고 운영자 세션이 있는 기기에서만 대여·반납할 수 있다.
 
 ## 6. 다음 작업
 
@@ -90,4 +90,3 @@
 
 - `ac8ce3d` — Build Bingo Bookstore tablet kiosk
 - `c7129ee` — Add Supabase books schema and access policies
-
